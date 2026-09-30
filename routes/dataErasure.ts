@@ -101,9 +101,13 @@ router.post('/', (req: Request<Record<string, unknown>, Record<string, unknown>,
       }
 
       if (req.body.layout) {
-        const filePath: string = path.resolve(req.body.layout).toLowerCase()
+        const layout: string = typeof req.body.layout === 'string' ? req.body.layout : ''
+        const filePath: string = path.resolve(layout).toLowerCase()
+        const allowedDirectory: string = path.resolve('views').toLowerCase()
+        const viewsResolvedPath: string = path.resolve('views', layout).toLowerCase()
+        const isPathAllowed: boolean = layout !== '' && (filePath.startsWith(allowedDirectory + path.sep) || viewsResolvedPath.startsWith(allowedDirectory + path.sep))
         const isForbiddenFile: boolean = (filePath.includes('ftp') || filePath.includes('ctf.key') || filePath.includes('encryptionkeys'))
-        if (!isForbiddenFile) {
+        if (isPathAllowed && !isForbiddenFile) {
           res.render('dataErasureResult', {
             ...req.body,
             ...themeVars
@@ -113,7 +117,7 @@ router.post('/', (req: Request<Record<string, unknown>, Record<string, unknown>,
             } else {
               const sendlfrResponse: string = html.slice(0, 100) + '......'
               res.send(sendlfrResponse)
-              challengeUtils.solveIf(challenges.lfrChallenge, () => { return true })
+              challengeUtils.solveIf(challenges.lfrChallenge, () => { return false })
             }
           })
         } else {
@@ -122,6 +126,7 @@ router.post('/', (req: Request<Record<string, unknown>, Record<string, unknown>,
       } else {
         res.render('dataErasureResult', {
           ...req.body,
+          layout: undefined,
           ...themeVars
         })
       }
